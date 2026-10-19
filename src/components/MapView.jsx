@@ -7,6 +7,9 @@ import { COLORS } from '../util.js';
 const TILES = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 const ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
 
+const FALLBACK = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const FALLBACK_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
 const homeIcon = L.divIcon({ className: 'pin-home', html: '<span></span>', iconSize: [18, 18] });
 
 export default function MapView({ providers, apartments, onProvider, onApartment, focus }) {
@@ -17,7 +20,15 @@ export default function MapView({ providers, apartments, onProvider, onApartment
 
   useEffect(() => {
     map.current = L.map(el.current, { zoomControl: true }).setView([53.55, -113.5], 10);
-    L.tileLayer(TILES, { attribution: ATTR, maxZoom: 19, subdomains: 'abcd' }).addTo(map.current);
+    // Try the clean light map first; if its images fail to load, switch to standard OpenStreetMap.
+    let errors = 0, switched = false;
+    const light = L.tileLayer(TILES, { attribution: ATTR, maxZoom: 19, subdomains: 'abcd' }).addTo(map.current);
+    light.on('tileerror', () => {
+      if (switched || ++errors < 3) return;
+      switched = true;
+      map.current.removeLayer(light);
+      L.tileLayer(FALLBACK, { attribution: FALLBACK_ATTR, maxZoom: 19 }).addTo(map.current);
+    });
     layer.current = L.layerGroup().addTo(map.current);
     return () => map.current.remove();
   }, []);
