@@ -9,10 +9,10 @@ export function CatDot({ category }) {
   return <span className="dot" style={{ background: COLORS[category] || '#555' }} />;
 }
 
-export function ProviderRow({ p, onOpen, onMessage }) {
+export function ProviderRow({ p, onOpen, onMessage, onHover }) {
   const phone = p.phone || firstPhone(p.privateContact);
   return (
-    <div className="prow">
+    <div className="prow" onMouseEnter={onHover ? () => onHover(p.id) : undefined} onMouseLeave={onHover ? () => onHover(null) : undefined}>
       <button className="prow-main" onClick={() => onOpen(p)}>
         <span className="prow-name"><CatDot category={p.category} />{p.name}</span>
         <span className="muted small">

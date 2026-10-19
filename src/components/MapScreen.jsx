@@ -13,6 +13,7 @@ export default function MapScreen({ openArea, openProvider, openComposer }) {
   const [cats, setCats] = useState(() => new Set());
   const [focus, setFocus] = useState(null);
   const [mine, setMine] = useState(true);
+  const [hoverId, setHoverId] = useState(null);
 
   const myZones = profile?.myZones || [];
   const areaZone = useMemo(() => Object.fromEntries(store.areas.map(a => [a.id, a.zone])), [store.areas]);
@@ -85,12 +86,12 @@ export default function MapScreen({ openArea, openProvider, openComposer }) {
           <Group title={`${shownProviders.length} provider${shownProviders.length === 1 ? '' : 's'}`}>
             {shownProviders.slice(0, 150).map(p => (
               <ProviderRow key={p.id} p={p} onOpen={x => { openProvider(x.id); if (x.lat != null) setFocus({ lat: x.lat, lng: x.lng, zoom: 14 }); }}
-                onMessage={x => openComposer({ providerId: x.id })} />
+                onMessage={x => openComposer({ providerId: x.id })} onHover={setHoverId} />
             ))}
           </Group>
         </div>
       </aside>
-      <MapView providers={shownProviders} apartments={apartments} onProvider={onProvider} onApartment={onApartment} focus={focus} />
+      <MapView providers={shownProviders} apartments={apartments} onProvider={onProvider} onApartment={onApartment} focus={focus} highlightId={hoverId} />
     </div>
   );
 }
