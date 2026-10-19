@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(db)/documents/users/$(request.auth.uid)).data; }
+    function isMember() { return signedIn() && exists(/databases/$(db)/documents/users/$(request.auth.uid)) && me().active == true; }
+    function isEditor() { return isMember() && me().role in ['admin', 'editor']; }
+    function isAdmin()  { return isMember() && me().role == 'admin'; }
+
+    match /users/{uid} {
+      // Anyone signed in can read their OWN record (needed on first sign-in); members can read everyone's.
+      allow read: if (signedIn() && uid == request.auth.uid) || isMember();
+      // Marc's very first sign-in creates his own admin record; after that only the admin manages users.
+      allow create: if isAdmin() || (signedIn() && uid == request.auth.uid
+                      && request.auth.token.email == 'marc@bennettdental.com'
+                      && request.resource.data.role == 'admin');
+      // Everyone may update their own name, zones and the "must change password" flag.
+      allow update: if isAdmin() || (signedIn() && uid == request.auth.uid
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChangePassword', 'myZones', 'name']));
+      allow delete: if isAdmin();
+    }
+
+    // All mission data: members read, editors write.
+    match /{coll}/{id} {
+      allow read: if isMember();
+      allow write: if isEditor() && coll != 'users';
+    }
+  }
+}

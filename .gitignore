@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.DS_Store
+# Never commit mission data — it lives in Firebase, and the seed file stays on your laptop.
+*seed*.json
+*backup*.json
