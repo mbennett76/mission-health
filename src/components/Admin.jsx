@@ -4,7 +4,7 @@ import { db, PREVIEW } from '../firebase.js';
 import { useStore } from '../store.jsx';
 import { useAuth, adminCreateUser, adminSendReset, adminUpdateUser } from '../auth.jsx';
 import { Field } from './Common.jsx';
-import { geocode, sleep } from '../util.js';
+import { geocode, sleep, parseLatLng, googleMapsSearch } from '../util.js';
 
 export default function Admin() {
   const { isAdmin, profile, updateMe } = useAuth();
@@ -41,21 +41,32 @@ export default function Admin() {
 
   async function findPins() {
     const todo = [
-      ...store.providers.filter(p => p.address && p.loc !== 'exact').map(p => ['providers', p]),
+      ...store.providers.filter(p => p.address && p.loc !== 'exact' && !p.hidden).map(p => ['providers', p]),
       ...store.apartments.filter(a => a.address && a.loc !== 'exact').map(a => ['apartments', a]),
     ];
-    let ok = 0, miss = [];
+    let ok = 0;
     for (let i = 0; i < todo.length; i++) {
       const [coll, x] = todo[i];
       setGeo(`Finding exact pins… ${i + 1} of ${todo.length}`);
       try {
-        const g = await geocode(x.address.replace(/^(Basement|Suite [\w-]+|#?[\w-]+)\s*-\s*/i, ''), x.town);
-        if (g) { await store.save(coll, x.id, { ...g, loc: 'exact' }); ok++; } else miss.push(x.name);
-      } catch { miss.push(x.name); }
-      await sleep(1100); // OpenStreetMap asks for no more than one lookup per second
+        const g = await geocode(x.address, x.town, x.lat != null ? x : null);
+        if (g) { await store.save(coll, x.id, { ...g, loc: 'exact' }); ok++; }
+      } catch { /* left for manual fix */ }
+      await sleep(1100); // the free map services ask for no more than one lookup per second
     }
-    setGeo(`Done: ${ok} pinned exactly.${miss.length ? ` Not found (${miss.length}): ${miss.join(', ')}` : ''}`);
+    setGeo(`Done: ${ok} of ${todo.length} pinned exactly.`);
   }
+
+  async function setPin(coll, x, text) {
+    const g = parseLatLng(text);
+    if (!g) { setMsg(`Couldn't read a location from that. Paste the coordinates (e.g. 53.5412, -113.2958) or a Google Maps link.`); return; }
+    await store.save(coll, x.id, { ...g, loc: 'exact' });
+    setMsg(`Pinned ${x.name}.`);
+  }
+  const unpinned = [
+    ...store.providers.filter(p => p.loc !== 'exact' && !p.hidden && p.address && p.address !== p.town).map(p => ['providers', p]),
+    ...store.apartments.filter(a => a.loc !== 'exact' && a.address).map(a => ['apartments', a]),
+  ];
 
   return (
     <div className="page">
@@ -106,6 +117,20 @@ export default function Admin() {
           </div>
           {geo && <p className="small">{geo}</p>}
         </section>
+
+        {unpinned.length > 0 && (
+          <section className="card">
+            <h3>Pins to place by hand ({unpinned.length})</h3>
+            <p className="small muted">For each one: click <b>Google Maps</b>, right-click the building, click the numbers at the top of the menu (that copies them), then paste them here and press Enter.</p>
+            {unpinned.map(([coll, x]) => (
+              <div key={coll + x.id} className="pinrow">
+                <div><b>{x.name}</b><div className="small muted">{x.address}{x.address?.includes(x.town) ? '' : `, ${x.town}`}</div></div>
+                <a className="btn ghost small" href={googleMapsSearch(x.address, x.town)} target="_blank" rel="noreferrer">Google Maps</a>
+                <input placeholder="Paste coordinates" onKeyDown={e => { if (e.key === 'Enter') setPin(coll, x, e.currentTarget.value); }} onPaste={e => { const v = e.clipboardData.getData('text'); setTimeout(() => setPin(coll, x, v), 0); }} />
+              </div>
+            ))}
+          </section>
+        )}
       </>}
       {msg && <p className="note">{msg}</p>}
     </div>

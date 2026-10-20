@@ -93,15 +93,63 @@ export function fillTemplate(t, { area, provider, canadian, signer }) {
   return body.replace(/\n{3,}/g, '\n\n').replace(/ +\./g, '.').trim();
 }
 
-// ---------- Address → map pin (OpenStreetMap Nominatim, max 1 request per second) ----------
-export async function geocode(address, town) {
-  const q = [address, town, /BC|NT/.test(`${address} ${town}`) ? '' : 'Alberta', 'Canada'].filter(Boolean).join(', ');
-  const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ca&q=' + encodeURIComponent(q), {
-    headers: { 'Accept-Language': 'en' },
-  });
+// ---------- Address → map pin (free: OpenStreetMap Nominatim, then Photon; max ~1 request per second) ----------
+// Strip things geocoders choke on: unit/suite numbers, "Basement", PO boxes, mall names.
+export function cleanAddress(address = '') {
+  let a = address.split(',').map(s => s.trim()).filter(Boolean);
+  a = a.filter(part => !/^(#?\w{1,5}|suite \S+|unit \S+|basement|main floor|\d+(st|nd|rd|th) floor|po box \d+|box \d+)$/i.test(part));
+  // Drop leading building/mall names when a later part is the street address.
+  const streetIdx = a.findIndex(part => /^\S*\d/.test(part));
+  if (streetIdx > 0) a = a.slice(streetIdx);
+  let first = (a[0] || '')
+    .replace(/^.*?\s-\s(?=\d)/, '')                    // "A-106 - 9120 96 Ave", "Basement - 11320 145 Ave"
+    .replace(/^#?[A-Z]?\d+[A-Z]?-(?=\d)/i, '')          // "201-5043 50 St" → "5043 50 St"
+    .replace(/\s+(#|suite |unit )\S+$/i, '');           // "2457 Broadmoor Blvd #100"
+  return [first, ...a.slice(1)].join(', ');
+}
+const PROVINCE = town => (/\bBC\b/.test(town) ? 'British Columbia' : /\bNT\b|yellowknife/i.test(town) ? 'Northwest Territories' : 'Alberta');
+const plainTown = town => (town || '').replace(/,?\s*(BC|NT)$/, '');
+
+async function nominatim(q) {
+  const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ca&q=' + encodeURIComponent(q), { headers: { 'Accept-Language': 'en' } });
   const j = await r.json();
   return j[0] ? { lat: +j[0].lat, lng: +j[0].lon } : null;
 }
+async function photon(q, near) {
+  const bias = near?.lat != null ? `&lat=${near.lat}&lon=${near.lng}` : '';
+  const r = await fetch('https://photon.komoot.io/api/?limit=1&q=' + encodeURIComponent(q) + bias);
+  const j = await r.json();
+  const f = j.features?.[0];
+  return f ? { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] } : null;
+}
+
+// near = the current approximate pin (town centre); results farther than 40 km from it are rejected as wrong matches.
+export async function geocode(address, town, near) {
+  const t = plainTown(town), prov = PROVINCE(town || '');
+  const street = cleanAddress(address).replace(new RegExp(',?\\s*' + t + '.*$', 'i'), '').trim();
+  const tries = [];
+  if (street) {
+    tries.push(`${street}, ${t}, ${prov}, Canada`);
+    if (t === 'Edmonton' && !/\b(NW|SW|NE|SE)\b/i.test(street)) tries.push(`${street} NW, ${t}, ${prov}, Canada`);
+  }
+  const ok = g => g && (!near || near.lat == null || km(near, g) < 40);
+  for (const q of tries) {
+    try { const g = await nominatim(q); if (ok(g)) return g; } catch { /* try next */ }
+    await sleep(1100);
+    try { const g = await photon(q, near); if (ok(g)) return g; } catch { /* try next */ }
+  }
+  return null;
+}
+
+// Read a pin from pasted text: "53.5412, -113.2958", a Google Maps link (…@53.54,-113.29…, ?q=53.54,-113.29, !3d53.54!4d-113.29).
+export function parseLatLng(text = '') {
+  const t = decodeURIComponent(text);
+  const m = t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || t.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || t.match(/(-?\d{1,2}\.\d{3,})\s*[, ]\s*(-?\d{2,3}\.\d{3,})/);
+  if (!m) return null;
+  const lat = +m[1], lng = +m[2];
+  return lat > 40 && lat < 75 && lng < -90 && lng > -145 ? { lat, lng } : null;
+}
+export const googleMapsSearch = (address, town) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([address, plainTown(town), PROVINCE(town || '')].filter(Boolean).join(', '));
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export async function copyText(text) {

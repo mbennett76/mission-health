@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store.jsx';
 import { useAuth } from '../auth.jsx';
-import { CATEGORY_ORDER, PAYMENT, directionsHref, geocode, firstPhone } from '../util.js';
+import { CATEGORY_ORDER, PAYMENT, directionsHref, geocode, firstPhone, parseLatLng, googleMapsSearch } from '../util.js';
 import { Sheet, PayBadge, ContactLinks, Field, Stamp } from './Common.jsx';
 
 const BLANK = { cowanListed: false, name: '', category: 'Walk-in clinic', town: '', address: '', phone: '', privateContact: '', email: '', practitioner: '',
@@ -25,10 +25,13 @@ export default function ProviderSheet({ providerId, close, openComposer }) {
     const id = isNew ? 'p' + Date.now().toString(36) : p.id;
     const values = { ...f };
     delete values.id; delete values.km; delete values.score;
+    const pasted = parseLatLng(values.pin || '');
+    delete values.pin;
+    if (pasted) Object.assign(values, pasted, { loc: 'exact' });
     // New or changed address → find the exact map pin.
-    if (values.address && (isNew || values.address !== p.address || values.town !== p.town || p.loc !== 'exact')) {
+    else if (values.address && (isNew || values.address !== p.address || values.town !== p.town || p.loc !== 'exact')) {
       try {
-        const g = await geocode(values.address, values.town);
+        const g = await geocode(values.address, values.town, p.lat != null ? p : null);
         if (g) Object.assign(values, g, { loc: 'exact' });
         else setBusy('Saved, but the address could not be found on the map — check it.');
       } catch { /* offline: keep old pin */ }
@@ -61,6 +64,10 @@ export default function ProviderSheet({ providerId, close, openComposer }) {
         <Field label="Church member?"><select value={f.member} onChange={set('member')}><option value="">—</option><option value="Y">Yes</option><option value="N">No</option></select></Field>
       </div>
       <Field label="Notes"><textarea rows={4} value={f.notes} onChange={set('notes')} /></Field>
+      <Field label="Map pin — optional: paste coordinates or a Google Maps link to place it exactly">
+        <span className="row gap6"><input value={f.pin || ''} onChange={set('pin')} placeholder="53.5412, -113.2958" />
+          <a className="btn ghost small" href={googleMapsSearch(f.address, f.town)} target="_blank" rel="noreferrer">Google Maps</a></span>
+      </Field>
       <Field label="Needs checking (leave blank when confirmed)"><input value={f.flag} onChange={set('flag')} /></Field>
       {busy && <p className="small">{busy}</p>}
       <div className="row gap6"><button className="btn" onClick={save}>Save</button>
