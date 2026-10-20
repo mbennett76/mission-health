@@ -34,7 +34,7 @@ export default function Admin() {
     const mode = document.querySelector('input[name=imode]:checked')?.value || 'add';
     if (mode === 'replace' && !confirm('Replace everything with this file? Edits made in the app since will be lost.')) return;
     setMsg('Importing…');
-    try { const r = await store.importData(JSON.parse(await f.text()), mode); setMsg(`Imported ${r.added} records${r.skipped ? `, kept ${r.skipped} existing` : ''}.`); }
+    try { const r = await store.importData(JSON.parse(await f.text()), mode); setMsg(`Imported ${r.added} new records${r.updated ? `, updated ${r.updated}` : ''}${r.skipped ? `, kept ${r.skipped} existing unchanged` : ''}.`); }
     catch (err) { setMsg('Import failed: ' + err.message); }
     e.target.value = '';
   }

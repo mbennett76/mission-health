@@ -47,32 +47,42 @@ export function StoreProvider({ children }) {
 
   // Import a seed/backup file. mode 'add' keeps anything already there; 'replace' overwrites.
   const importData = useCallback(async (json, mode = 'add') => {
-    let added = 0, skipped = 0;
+    let added = 0, skipped = 0, updated = 0;
     if (PREVIEW) {
       setData(d => {
         const out = { ...d };
         for (const c of COLLECTIONS) {
           const have = new Set((mode === 'add' ? d[c] : []).map(x => x.id));
           const base = mode === 'add' ? d[c] : [];
-          const extra = (json[c] || []).filter(x => (have.has(x.id) ? (skipped++, false) : (added++, true)));
-          out[c] = [...base, ...extra];
+          const rows = json[c] || [];
+          const merges = new Map(rows.filter(x => x._merge && have.has(x.id)).map(({ _merge, ...x }) => [x.id, x]));
+          const extra = rows.filter(x => !x._merge).filter(x => (have.has(x.id) ? (skipped++, false) : (added++, true)));
+          out[c] = [...base.map(x => (merges.has(x.id) ? (updated++, { ...x, ...merges.get(x.id) }) : x)), ...extra];
         }
         return out;
       });
       setLoaded(true);
-      return { added, skipped };
+      return { added, skipped, updated };
     }
     for (const c of COLLECTIONS) {
       const existing = mode === 'add' ? new Set((await getDocs(collection(db, c))).docs.map(x => x.id)) : new Set();
-      const rows = (json[c] || []).filter(x => (existing.has(x.id) ? (skipped++, false) : true));
+      const all = json[c] || [];
+      // "_merge" rows update a few fields of a provider that already exists (and are skipped if it doesn't).
+      const merges = all.filter(x => x._merge && (mode !== 'add' || existing.has(x.id)));
+      const rows = all.filter(x => !x._merge).filter(x => (existing.has(x.id) ? (skipped++, false) : true));
       for (let i = 0; i < rows.length; i += 400) {
         const batch = writeBatch(db);
         rows.slice(i, i + 400).forEach(({ id, ...rest }) => { batch.set(doc(db, c, id), rest); added++; });
         await batch.commit();
       }
+      if (merges.length) {
+        const batch = writeBatch(db);
+        merges.forEach(({ id, _merge, ...rest }) => { batch.set(doc(db, c, id), { ...rest, updatedBy: who, updatedAt: serverTimestamp() }, { merge: true }); updated++; });
+        await batch.commit();
+      }
     }
-    return { added, skipped };
-  }, []);
+    return { added, skipped, updated };
+  }, [who]);
 
   const exportData = useCallback(() => {
     const clean = Object.fromEntries(COLLECTIONS.map(c => [c, data[c].map(({ updatedAt, ...r }) => r)]));

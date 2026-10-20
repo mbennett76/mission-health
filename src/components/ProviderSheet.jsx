@@ -4,7 +4,7 @@ import { useAuth } from '../auth.jsx';
 import { CATEGORY_ORDER, PAYMENT, directionsHref, geocode, firstPhone } from '../util.js';
 import { Sheet, PayBadge, ContactLinks, Field, Stamp } from './Common.jsx';
 
-const BLANK = { name: '', category: 'Walk-in clinic', town: '', address: '', phone: '', privateContact: '', email: '', practitioner: '',
+const BLANK = { cowanListed: false, name: '', category: 'Walk-in clinic', town: '', address: '', phone: '', privateContact: '', email: '', practitioner: '',
   payment: 'unknown', fee: '', hours: '', notes: '', member: '', flag: '', hidden: false };
 
 export default function ProviderSheet({ providerId, close, openComposer }) {
@@ -57,6 +57,7 @@ export default function ProviderSheet({ providerId, close, openComposer }) {
         <Field label="Payment"><select value={f.payment} onChange={set('payment')}>{Object.entries(PAYMENT).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
         <Field label="Usual fee"><input value={f.fee} onChange={set('fee')} placeholder="$100 cash" /></Field>
         <Field label="Hours"><input value={f.hours} onChange={set('hours')} /></Field>
+        <Field label="In Cowan network?"><select value={f.cowanListed ? 'Y' : ''} onChange={e => setF({ ...f, cowanListed: e.target.value === 'Y' })}><option value="">—</option><option value="Y">Yes</option></select></Field>
         <Field label="Church member?"><select value={f.member} onChange={set('member')}><option value="">—</option><option value="Y">Yes</option><option value="N">No</option></select></Field>
       </div>
       <Field label="Notes"><textarea rows={4} value={f.notes} onChange={set('notes')} /></Field>
@@ -72,7 +73,8 @@ export default function ProviderSheet({ providerId, close, openComposer }) {
     <Sheet title={p.name} onClose={close}>
       <p className="muted">{p.category}{p.practitioner ? ` · ${p.practitioner}` : ''}</p>
       <p>{p.address || p.town}</p>
-      <div className="row gap6 wrap"><PayBadge payment={p.payment} />{p.fee && <span>{p.fee}</span>}{p.member === 'Y' && <span className="badge muted">Member</span>}</div>
+      <div className="row gap6 wrap"><PayBadge payment={p.payment} />{p.fee && <span>{p.fee}</span>}{p.member === 'Y' && <span className="badge muted">Member</span>}{p.cowanListed && <span className="badge cowan">Cowan network</span>}</div>
+      {p.source && <p className="small muted">Source: {p.source}</p>}
       {p.hours && <p className="small">🕘 {p.hours}</p>}
       <ContactLinks phone={p.phone} email={p.email} />
       {p.privateContact && <p className="small">Personal / cell: {p.privateContact}</p>}

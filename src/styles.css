@@ -20,7 +20,7 @@ textarea{resize:vertical} code{background:var(--note);padding:1px 5px;border-rad
 .link{background:none;border:0;color:var(--accent);cursor:pointer;padding:4px 0;font:inherit;text-decoration:underline}
 .iconbtn{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;text-decoration:none;font-size:1rem}
 .badge{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;background:var(--note);color:var(--ink)}
-.badge.good{background:var(--good);color:var(--good-ink)} .badge.warn{background:var(--warn);color:var(--warn-ink)} .badge.muted{color:var(--muted)}
+.badge.good{background:var(--good);color:var(--good-ink)} .badge.warn{background:var(--warn);color:var(--warn-ink)} .badge.muted{color:var(--muted)} .badge.cowan{background:#e6eef8;color:#1e4a7a} @media (prefers-color-scheme:dark){.badge.cowan{background:#1c2c40;color:#a9c8ee}}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;flex:none}
 .note{background:var(--note);border-radius:10px;padding:9px 12px;margin:6px 0;font-size:.92rem}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:10px 0}

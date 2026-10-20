@@ -20,6 +20,7 @@ export function ProviderRow({ p, onOpen, onMessage, onHover }) {
         </span>
         <span className="row gap6 wrap">
           <PayBadge payment={p.payment} />
+          {p.cowanListed && <span className="badge cowan">Cowan network</span>}
           {p.fee && <span className="small muted">{p.fee}</span>}
           {p.flag && <span className="small flag">⚑ check</span>}
         </span>
