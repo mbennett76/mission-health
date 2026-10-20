@@ -50,13 +50,16 @@ export default function MapScreen({ openArea, openProvider, openComposer }) {
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search a missionary, area, clinic, or need (dentist, strep, x-ray…)" aria-label="Search" />
           {q && <button className="iconbtn" onClick={() => setQ('')} aria-label="Clear">✕</button>}
         </div>
-        <div className="chips">
+        <div className="legend">
+          <span className="legend-label">Legend</span>
+          <div className="chips">
           {presentCats.map(c => (
             <button key={c} className={`chip ${cats.size && !cats.has(c) ? 'off' : ''} ${cats.has(c) ? 'on' : ''}`} onClick={() => toggle(c)}>
               <span className="dot" style={{ background: COLORS[c] }} />{c}
             </button>
           ))}
           {cats.size > 0 && <button className="chip" onClick={() => setCats(new Set())}>Show all</button>}
+          </div>
         </div>
         {myZones.length > 0 && (
           <label className="small row gap6 pad"><input type="checkbox" checked={mine} onChange={e => setMine(e.target.checked)} /> Only my zones ({myZones.join(', ')})</label>
