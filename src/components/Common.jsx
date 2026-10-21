@@ -25,10 +25,13 @@ export function ProviderRow({ p, onOpen, onMessage, onHover }) {
           {p.flag && <span className="small flag">⚑ check</span>}
         </span>
       </button>
-      <div className="prow-actions">
-        {phone && <a className="iconbtn" href={telHref(phone)} aria-label="Call">📞</a>}
-        <a className="iconbtn" href={directionsHref(p)} target="_blank" rel="noreferrer" aria-label="Directions">🧭</a>
-        {onMessage && <button className="iconbtn" onClick={() => onMessage(p)} aria-label="Message">💬</button>}
+      <div className="prow-side">
+        <span className="prow-star" aria-label={p.favourite ? 'Favourite' : undefined}>{p.favourite ? '★' : ''}</span>
+        <div className="prow-actions">
+          {phone && <a className="iconbtn" href={telHref(phone)} aria-label="Call">📞</a>}
+          <a className="iconbtn" href={directionsHref(p)} target="_blank" rel="noreferrer" aria-label="Directions">🧭</a>
+          {onMessage && <button className="iconbtn" onClick={() => onMessage(p)} aria-label="Message">💬</button>}
+        </div>
       </div>
     </div>
   );

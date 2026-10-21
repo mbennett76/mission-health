@@ -78,7 +78,13 @@ export default function ProviderSheet({ providerId, close, openComposer }) {
   const phone = p.phone || firstPhone(p.privateContact);
   return (
     <Sheet title={p.name} onClose={close}>
-      <p className="muted">{p.category}{p.practitioner ? ` · ${p.practitioner}` : ''}</p>
+      <div className="row between gap6">
+        <p className="muted" style={{ margin: 0 }}>{p.category}{p.practitioner ? ` · ${p.practitioner}` : ''}</p>
+        {canEdit
+          ? <button className={`star ${p.favourite ? 'on' : ''}`} onClick={() => store.save('providers', p.id, { favourite: !p.favourite })}
+              aria-label={p.favourite ? 'Remove favourite' : 'Mark as favourite'} aria-pressed={!!p.favourite}>{p.favourite ? '★' : '☆'}</button>
+          : p.favourite && <span className="star on" aria-label="Favourite">★</span>}
+      </div>
       <p>{p.address || p.town}</p>
       <div className="row gap6 wrap"><PayBadge payment={p.payment} />{p.fee && <span>{p.fee}</span>}{p.member === 'Y' && <span className="badge muted">Member</span>}{p.cowanListed && <span className="badge cowan">Cowan network</span>}</div>
       {p.source && <p className="small muted">Source: {p.source}</p>}
