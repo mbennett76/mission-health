@@ -91,7 +91,8 @@ export function GuideTab() {
   const byCat = useMemo(() => {
     const g = {};
     store.policies.forEach(p => (g[p.category] ||= []).push(p));
-    return g;
+    const first = 'What Cowan covers';
+    return g[first] ? { [first]: g[first], ...g } : g;
   }, [store.policies]);
   const nq = norm(q);
   const acr = acronyms.filter(a => !nq || norm(a.abbr).includes(nq) || norm(a.meaning).includes(nq));

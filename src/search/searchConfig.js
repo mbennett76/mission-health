@@ -85,7 +85,9 @@ export const CATEGORIES = {
 // Words that should open a guidance card rather than (or as well as) a provider list.
 export const GUIDANCE_TERMS = {
   '911': 'General', 'ambulance': 'General', 'emergency': 'ER', 'er': 'ER', 'ed': 'ER', 'hospital': 'ER',
-  'receipt': 'General', 'reimburse': 'General', 'reimbursement': 'General', 'cash': 'General',
+  'receipt': 'General', 'reimburse': 'What Cowan covers', 'reimbursement': 'What Cowan covers', 'cash': 'General',
+  'covered': 'What Cowan covers', 'coverage': 'What Cowan covers', 'not covered': 'What Cowan covers', 'pay first': 'What Cowan covers',
+  'claim': 'What Cowan covers', 'otc': 'What Cowan covers', 'over the counter': 'What Cowan covers', 'pre approval': 'What Cowan covers',
   'intake form': 'General', 'forms': 'General', 'address': 'General', 'us prescription': 'General',
   'ama': 'Physiotherapy', 'visit limit': 'Chiropractic', '10 visits': 'Chiropractic', '5 visits': 'Physiotherapy',
   'cowan': 'General', 'code': 'Lab', 'billing code': 'Lab',

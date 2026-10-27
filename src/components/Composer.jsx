@@ -11,7 +11,11 @@ export default function Composer({ init, close }) {
   const [areaId, setAreaId] = useState(init.areaId || '');
   const [providerId, setProviderId] = useState(init.providerId || '');
   const templates = [...store.templates].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
-  const [tid, setTid] = useState(init.templateId || (init.providerId ? templates.find(t => t.needsProvider)?.id : templates[0]?.id) || '');
+  // Opening from a lab or imaging clinic starts on the matching message.
+  const CAT_TEMPLATE = { Lab: 't04', 'Diagnostic imaging': 't11' };
+  const startCat = store.providers.find(p => p.id === init.providerId)?.category;
+  const catTid = templates.some(t => t.id === CAT_TEMPLATE[startCat]) ? CAT_TEMPLATE[startCat] : null;
+  const [tid, setTid] = useState(init.templateId || (init.providerId ? catTid || templates.find(t => t.needsProvider)?.id : templates[0]?.id) || '');
   const [canadian, setCanadian] = useState(false);
   const [sign, setSign] = useState(true);
   const [text, setText] = useState('');
