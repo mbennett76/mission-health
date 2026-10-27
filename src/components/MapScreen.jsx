@@ -82,6 +82,7 @@ export default function MapScreen({ openArea, openProvider, openComposer }) {
                 ))}
               </Group>}
               {res.categories.length > 0 && <p className="pad small muted">Showing: {res.categories.map(c => c.category + (c.via.startsWith('symptom') ? ` (${c.via.replace('symptom: ', '')})` : '')).join(', ')}</p>}
+              {res.townMiss && <p className="pad small flag">None in {res.townMiss} yet — showing all locations instead.</p>}
               {res.guidance.map(g => g.notes.map(n => <div key={n.id} className="note"><b>{g.category}:</b> {n.text}</div>))}
               {res.acronyms.map(a => <div key={a.abbr} className="note"><b>{a.abbr}</b> — {a.meaning}</div>)}
             </>

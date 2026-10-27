@@ -45,15 +45,25 @@ export const CATEGORIES = {
   },
   'Lab': {
     icon: 'flask',
-    terms: ['lab', 'labs', 'blood test', 'bloodwork', 'blood work', 'urine test', 'apl', 'alberta precision',
-      'requisition', 'req', '33804'],
-    symptoms: []
+    terms: ['lab', 'labs', 'laboratory', 'apl', 'alberta precision', 'precision lab', 'precision labs', 'dynalife', 'patient service centre', 'psc',
+      'requisition', 'req', 'lab req', '33804', 'billing code',
+      'blood test', 'bloodwork', 'blood work', 'blood draw', 'blood sample', 'needle', 'fasting', 'fasting blood work',
+      'urine test', 'urine', 'urinalysis', 'urine sample', 'urine culture', 'pee test', 'stool sample', 'stool test', 'poop sample', 'fecal',
+      'swab', 'throat swab', 'culture', 'sputum', 'specimen', 'sample', 'drop off sample',
+      'cbc', 'blood count', 'iron', 'ferritin', 'b12', 'vitamin d', 'thyroid', 'tsh', 'a1c', 'glucose', 'blood sugar', 'diabetes test',
+      'glucose tolerance', 'cholesterol', 'lipids', 'liver test', 'kidney test', 'electrolytes', 'inr', 'coag', 'blood thinner',
+      'mono test', 'pregnancy test', 'hcg', 'tb test', 'quantiferon', 'celiac test', 'allergy blood test',
+      'ecg', 'ekg', 'heart tracing', 'holter', 'holter monitor', 'results', 'test results'],
+    symptoms: ['tired all the time', 'fatigue', 'anemia', 'anaemia', 'low iron', 'dizzy', 'thirsty', 'blood in urine', 'burning when peeing',
+      'mono', 'parasite', 'giardia', 'diarrhea for days', 'uti', 'bladder infection', 'urinary']
   },
   'Diagnostic imaging': {
     icon: 'scan',
-    terms: ['x-ray', 'xray', 'x ray', 'ultrasound', 'u/s', 'us', 'ct', 'ct scan', 'mri', 'imaging', 'radiology',
-      'mic', 'insight', 'canadian diagnostic'],
-    symptoms: ['possible fracture', 'broken bone']
+    terms: ['x-ray', 'xray', 'x ray', 'xrays', 'x-rays', 'walk-in x-ray', 'ultrasound', 'u/s', 'sonogram', 'ct', 'ct scan', 'cat scan', 'mri', 'mri scan',
+      'imaging', 'radiology', 'scan', 'diagnostic', 'fluoroscopy', 'barium', 'nuclear medicine', 'bone scan', 'bone density', 'dexa', 'dxa',
+      'mammogram', 'mammography', 'breast ultrasound', 'breast screening', 'echo', 'echocardiogram', 'heart ultrasound',
+      'mic', 'insight', 'canadian diagnostic', 'canada diagnostic', 'cdc', 'report', 'usb', 'images'],
+    symptoms: ['possible fracture', 'broken bone', 'fracture', 'sprained ankle', 'kidney stone', 'gallbladder', 'lump']
   },
   'Podiatry': {
     icon: 'foot',

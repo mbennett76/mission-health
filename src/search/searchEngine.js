@@ -79,17 +79,53 @@ export function search(query, data) {
     if (s >= 60) res.areas.push({ type: 'zone', ...z, score: s });
   }
 
-  res.categories = matchCategories(q);
+  // "urine test sherwood park", "mri in red deer": split a town out of the query and search the rest within that town.
+  const STOP = new Set(['in', 'near', 'at', 'around', 'for', 'a', 'an', 'the', 'me', 'my', 'get', 'need', 'needs', 'find', 'where', 'to', 'go', 'can', 'i', 'we', 'is', 'there', 'close', 'closest', 'nearest', 'by']);
+  const townNames = [...new Set([...(data.providers || []).map(p => (p.town || '').split(',')[0]), ...Object.values(TOWN_ALIASES)])].filter(Boolean);
+  let town = matchTown(q), rest = q;
+  if (!town) {
+    const pad = ` ${q} `;
+    const aliasHit = Object.keys(TOWN_ALIASES).filter(a => a.length >= 2 && pad.includes(` ${a} `)).sort((a, b) => b.length - a.length)[0];
+    const hit = townNames.filter(t => pad.includes(` ${norm(t)} `)).sort((a, b) => b.length - a.length)[0];
+    if (hit) { town = hit; rest = pad.replace(` ${norm(hit)} `, ' '); }
+    else if (aliasHit) { town = TOWN_ALIASES[aliasHit]; rest = pad.replace(` ${aliasHit} `, ' '); }
+  } else rest = '';
+  rest = tokensOf(rest).filter(w => !STOP.has(w)).join(' ');
+  const what = town ? rest : tokensOf(q).filter(w => !STOP.has(w)).join(' ') || q;
+
+  res.categories = what ? matchCategories(what) : [];
   const cats = new Set(res.categories.map(c => c.category));
-  const town = matchTown(q);
+  const townOf = p => (p.town || '').split(',')[0];
+
+  // Services a provider lists (e.g. Insight: "Services: X-ray, ultrasound, CT, MRI"), so "mri" ranks the MRI clinics first.
+  // Services nearly every clinic of that kind offers don't re-rank anything (so X-ray still lists Cowan-billing clinics first).
+  const GENERIC = new Set(['scan', 'test', 'exam', 'clinic', 'walk', 'in', 'x', 'ray', 'xray', 'xrays', 'rays', 'ultrasound', 'sonogram', 'imaging', 'u/s', 'radiology']);
+  const cowan = p => (p.payment === 'direct_bill' || p.payment === 'accepts_cowan' ? 3 : 0);
+  const whatToks = tokensOf(what).filter(w => w.length >= 2 && !GENERIC.has(w));
+  const servicesScore = p => {
+    const s = p.services || (p.notes || '').split(/Services:/i)[1] || '';
+    if (!s || !whatToks.length) return 0;
+    const words = tokensOf(s);
+    const hit = whatToks.some(t => words.some(w => w === t || (t.length >= 4 && w.startsWith(t)) || (t.length >= 6 && w.slice(0, 7) === t.slice(0, 7))));
+    return hit ? 88 : 0;
+  };
 
   for (const p of data.providers || []) {
-    const s = Math.max(
-      score(q, p.name), score(q, p.practitioner || ''), score(q, p.town) * 0.9,
-      town && p.town === town ? 85 : 0,
-      cats.has(p.category) ? 75 : 0,
-    );
+    let s;
+    if (town && what) {
+      if (townOf(p) !== town) continue;
+      s = Math.max(score(what, p.name), score(what, p.practitioner || ''), cats.has(p.category) ? 85 + cowan(p) : 0, servicesScore(p) ? 95 : 0);
+    } else if (town) {
+      s = townOf(p) === town ? 85 : 0;
+    } else {
+      s = Math.max(score(what, p.name), score(what, p.practitioner || ''), score(what, p.town) * 0.9, cats.has(p.category) ? 75 + cowan(p) : 0, servicesScore(p));
+    }
     if (s >= 60) res.providers.push({ ...p, score: s });
+  }
+  // Nothing of that kind in that town → show it everywhere instead, so the search never comes up empty.
+  if (town && what && !res.providers.length && cats.size) {
+    res.townMiss = town;
+    for (const p of data.providers || []) if (cats.has(p.category)) res.providers.push({ ...p, score: 75 + servicesScore(p) / 10 });
   }
 
   for (const [term, cat] of Object.entries(GUIDANCE_TERMS)) if (score(q, term) >= 80) res.guidance.push(cat);
